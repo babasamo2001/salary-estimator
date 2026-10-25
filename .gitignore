@@ -1,0 +1,13 @@
+# Data
+data/*
+!data/.gitkeep
+
+# Node modules
+frontend/node_modules/
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
