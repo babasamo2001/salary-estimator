@@ -1,4 +1,3 @@
-#%%
 import os
 
 import joblib
@@ -14,7 +13,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from xgboost import XGBRegressor
 
 print("Imports loaded successfully!")
-#%%
+
 # Load dataset
 data_path = os.path.join("..", "data", "salary_data.csv")
 df = pd.read_csv(data_path)
@@ -28,13 +27,13 @@ df = df.drop_duplicates()
 # 2. Drop rows with missing target values (Salary)
 df = df.dropna(subset=['Salary'])
 
-# 3. Remove logical outliers/impossible values (Age reference removed since feature is dropped)
+# 3. Remove logical outliers
 df = df[(df['Salary'] > 0) & (df['Years of Experience'] >= 0)]
 
 print("Cleaned shape:", df.shape)
 df.head()
-#%%
-# Separate features (Excluding Age and Gender to prevent collinearity and OOD issues)
+# %%
+# Separate features (Drop Age and Gender due to low prediction signal and multicollinearity issues)
 numeric_features = ['Years of Experience']
 categorical_features = ['Education Level', 'Job Title']
 
@@ -46,7 +45,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 print(f"Training samples: {X_train.shape[0]}")
 print(f"Testing samples: {X_test.shape[0]}")
-#%%
+
 # Numeric pipeline: Impute missing values with median
 numeric_transformer = Pipeline(steps=[
     ('imputer', SimpleImputer(strategy='median')),
@@ -73,7 +72,7 @@ pipeline = Pipeline(steps=[
     ('feature_selector', SelectKBest(score_func=f_regression, k='all')),
     ('model', XGBRegressor(random_state=42, objective='reg:squarederror'))
 ])
-#%%
+
 # Tuned hyperparameter grid for XGBoost
 param_grid = {
     'model__n_estimators': [100, 200],
@@ -94,7 +93,7 @@ grid_search.fit(X_train, y_train)
 
 print(f"Best R² Score on Cross-Validation: {grid_search.best_score_:.4f}")
 print(f"Best Parameters: {grid_search.best_params_}")
-#%%
+
 best_model = grid_search.best_estimator_
 
 # Evaluate performance on test set
