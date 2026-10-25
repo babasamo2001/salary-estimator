@@ -154,6 +154,7 @@ export default function Home() {
         <div className="result-box">
           <h2>Estimated Salary: ${prediction.toLocaleString()}</h2>
           <h4>Prediction is in the context of the data the model is trained on.</h4>
+          <a href="https://www.kaggle.com/datasets/rkiattisak/salaly-prediction-for-beginer?resource=download" target="_blank">Download dataset</a>
         </div>
       )}
     </div>
