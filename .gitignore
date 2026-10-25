@@ -1,6 +1,5 @@
 # Data
-data/*
-!data/.gitkeep
+data/
 
 # Node modules
 frontend/node_modules/

@@ -4,6 +4,9 @@ __pycache__/
 *.pyo
 *.pyd
 
+# IDE
+.idea/
+
 # Virtual environments
 venv/
 env/
