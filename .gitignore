@@ -1,0 +1,15 @@
+# Data/
+Data/
+
+# Cache
+cache/
+
+# Docker
+.dockerignore
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
