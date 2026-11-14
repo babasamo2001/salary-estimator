@@ -1,13 +1,13 @@
-# Import libraries
-from pathlib import Path
 import os
+import traceback
+from pathlib import Path
 
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
 from mangum import Mangum
 from pydantic import BaseModel, Field, field_validator
 
@@ -37,8 +37,6 @@ except Exception as e:
 
 # Determine frontend build directory path early
 FRONTEND_BUILD_DIR = PROJECT_ROOT / "frontend" / "build"
-if not FRONTEND_BUILD_DIR.exists():
-    FRONTEND_BUILD_DIR = PROJECT_ROOT / "frontend" / "build"
 
 
 # Extract user data for prediction
@@ -75,10 +73,11 @@ def predict_salary(data: SalaryInput):
         return {"estimated_salary": round(float(prediction[0]), 2)}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-# Debug route to inspect container layout and path existence (Kept active always)
+# Debug route to inspect container layout and path existence
 @app.get("/debug-paths")
 def debug_paths():
     return {

@@ -1,21 +1,31 @@
-# 🚀 Serverless Salary Estimator App
+# Serverless Salary Estimator App
 
-A production-ready, zero-cost serverless machine learning application that predicts candidate salaries based on professional demographics and experience. Built with a decoupled architecture featuring a **React.js** frontend and a containerized **FastAPI** backend deployed on **AWS Lambda** and **API Gateway**.
+A production-ready, zero-cost serverless machine learning application that predicts salaries based on professional demographics and experience. Built with a decoupled architecture featuring a React.js frontend and a containerized FastAPI backend deployed on AWS Lambda.
 
----
+# Tech Stack
+* Python
+* FastAPI
+* React
+* React
+* AWS ECR
+* Scikit-Learn
 
-## 🏗️ Architecture & Cost Strategy
+# Application Preview
 
-* **Frontend:** Static React.js application communicating via REST API.
-* **Backend:** FastAPI running inside an AWS Lambda container via the `Mangum` adapter.
-* **ML Core:** Scikit-learn pipeline serialized with `joblib`, featuring automated data hygiene and a `RandomForestRegressor`.
-* **Cost Optimization:** Leverages permanent lifetime free tiers (**AWS Lambda:** 1M requests/mo + 3.2M compute seconds; **API Gateway:** 1M calls/mo) for $0/month maintenance.
+<div align="center">
+  <img src="assets/UI.PNG" alt="Salary Estimator React UI" width="800" />
+  <p><em>React frontend displaying real-time salary prediction results from the AWS Lambda FastAPI backend.</em></p>
+</div>
 
----
+# Architecture & Cost Strategy
 
-## 📁 Project Structure
+* Frontend: Static React.js application communicating via REST API
+* Backend: FastAPI running inside a AWS Lambda container via the `Mangum` adapter
+* ML Core: Scikit-learn pipeline serialized with `joblib`, featuring automated data hygiene and a `RandomForestRegressor`
+* Cost Optimization: Leverages permanent lifetime free tiers (AWS Lambda: 1M requests/mo + 3.2M compute seconds) for $0/month maintenance.
 
-```text
+# Project Structure
+
 salary-estimator-app/
 ├── salary_data.csv
 │   
@@ -42,14 +52,15 @@ salary-estimator-app/
 ├── requirements.txt
 └── README.md
 
-📊 Data Schema & Modeling Approach
-The model trains on structured tabular data containing the following features:
+# Data Schema & Modeling Approach
+
+The model trains on structured tabular data (`salary.csv`) available at https://drive.google.com/file/d/13SHaCp3_p7q1N6zT1Tkfi_7Zn-n1mz9-/view?usp=sharing. The dataset contains the following features:
 
 Age (Numeric)
 
-Gender (Categorical)
+Gender (Categorical / Nominal)
 
-Education (Categorical)
+Education (Categorical / Ordinal)
 
 Job Title (Categorical / Ordinal)
 
@@ -62,8 +73,8 @@ Encoding Strategy:
 Following our architecture rules, categorical and ordinal features (including Job Title and Education) are handled directly via One-Hot Encoding (OneHotEncoder). Because the underlying algorithm is a tree-based ensemble (RandomForestRegressor), the trees naturally evaluate categorical splits and thresholds efficiently without requiring manual ordinal integer mapping.
 
 
-🛠️ Local Development & Setup
-1. Clone & Setup Backend Environment
+ Local Development & Setup
+1. Stup Backend Environment
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -72,7 +83,7 @@ pip install -r requirements.txt
 python src/pipeline.py
 
 # Run unit tests
-pytest tests/
+pytest
 
 2. Run FastAPI Locally
 uvicorn app:app --reload --port 8000
@@ -84,18 +95,74 @@ npm start
 
 The React app will run on http://localhost:3000 and point to your local FastAPI server on port 8000.
 
-🐳 Docker & AWS Lambda Deployment
+# Docker & AWS Lambda Deployment
 Build the Docker Image:
-docker build -t salary-estimator-api .
+docker build -t salary-app
 
-Test Container Locally (AWS Lambda Emulation):
-docker run -p 9000:8080 salary-estimator-api
+### Test Container Locally
+Start the Docker container:
+docker run -p 9000:8080 salary-app
 
-Deploy to AWS ECR & Lambda:
-Push the container image to Amazon Elastic Container Registry (ECR).
+Invoke the endpoint locally:
+curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "version": "2.0",
+    "routeKey": "POST /predict",
+    "rawPath": "/predict",
+    "requestContext": {
+      "http": {
+        "method": "POST",
+        "path": "/predict"
+      }
+    },
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": "{\"Education Level\": \"Bachelor's\", \"Job Title\": \"Software Engineer\", \"Years of Experience\": 3.0}",
+    "isBase64Encoded": false
+  }'
 
-Create an AWS Lambda function using the container image.
+Authenticate Docker with Amazon ECR:
+aws ecr get-login-password --region <your region> | docker login --username AWS --password-stdin <your-aws-account-id>.dkr.ecr.<your region>.amazonaws.com
 
-Configure an AWS API Gateway (HTTP API) trigger pointing to your Lambda function.
+Create your ECR repository (if it doesn't exist):
+aws ecr create-repository --repository-name salary-app --image-scanning-configuration scanOnPush=true --region <your region>
 
-Set your React production environment variable (REACT_APP_API_URL) to your live API Gateway endpoint URL.
+Tag your local Docker image:
+docker tag salary-app:latest <your-aws-account-id>[.dkr.ecr.<your region>.amazonaws.com/salary-app:latest](https://.dkr.ecr.<your region>.amazonaws.com/salary-app:latest)
+
+Push the image to ECR:
+docker push <your-aws-account-id>[.dkr.ecr.<your region>.amazonaws.com/salary-app:latest](https://.dkr.ecr.<your region>.amazonaws.com/salary-app:latest)
+
+Create the Lambda function (Run this if the function does not exist yet):
+aws lambda create-function \
+  --function-name salary-app \
+  --package-type Image \
+  --code ImageUri=<your-aws-account-id>.dkr.ecr.<your region>.amazonaws.com/salary-app:latest \
+  --role arn:aws:iam::<your-aws-account-id>:role/<your-lambda-execution-role> \
+  --region <your region>
+
+OR
+
+Update an existing Lambda function with your new ECR image:
+--function-name salary-app \
+  --image-uri <your-aws-account-id>.dkr.ecr.<your region>.amazonaws.com/salary-app:latest \
+  --region <your region>
+
+Create a Function URL with Auth type set to NONE (for direct public HTTPS access):
+aws lambda create-function-url-config \
+  --function-name salary-app \
+  --auth-type NONE \
+  --region <your region>
+
+Grant public invocation permission (Required when Auth type is NONE to prevent 403 Forbidden errors):
+aws lambda add-permission \
+  --function-name salary-app \
+  --statement-id FunctionURLAllowPublicAccess \
+  --action lambda:InvokeFunctionUrl \
+  --principal "*" \
+  --function-url-auth-type NONE \
+  --region <your region>
+
+Point your React frontend POST requests directly to your FastAPI backend's '/predict' endpoint hosted on AWS Lambda.

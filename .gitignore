@@ -1,15 +1,16 @@
 # Data/
 Data/
 
+# React
+node_modules/
+frontend/build/
+
 # Cache
 cache/
-
-# Docker
-.dockerignore
 
 # Python
 __pycache__/
 *.pyc
 
 # IDE
-.idea/
+.idea/node_modules/
